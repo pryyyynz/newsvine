@@ -1,0 +1,27 @@
+name: newsvine_phase5
+version: 1.0.0
+config-version: 2
+
+profile: newsvine_phase5
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+analysis-paths: ["analysis"]
+test-paths: ["tests"]
+
+clean-targets:
+  - target
+  - dbt_packages
+
+target-path: target
+
+models:
+  newsvine_phase5:
+    +materialized: table
+    staging:
+      +schema: staging
+    intermediate:
+      +schema: intermediate
+    marts:
+      +schema: marts

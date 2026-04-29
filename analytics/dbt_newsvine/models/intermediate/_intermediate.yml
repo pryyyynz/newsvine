@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_user_article_matrix
+    columns:
+      - name: user_article_key
+        tests: [not_null, unique]
+      - name: user_id
+        tests: [not_null]
+      - name: article_id
+        tests: [not_null]
+      - name: rating
+        tests: [not_null]

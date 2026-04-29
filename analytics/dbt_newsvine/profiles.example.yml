@@ -1,0 +1,23 @@
+newsvine_phase5:
+  target: local_postgres
+  outputs:
+    local_postgres:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: newsvine
+      pass: newsvine
+      dbname: users
+      schema: analytics
+      threads: 4
+
+    prod_bigquery:
+      type: bigquery
+      method: service-account
+      project: your-gcp-project
+      dataset: news_features
+      keyfile: /path/to/service-account.json
+      location: US
+      priority: interactive
+      threads: 8
+      timeout_seconds: 300

@@ -1,0 +1,37 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: public
+    tables:
+      - name: interaction_events_raw
+      - name: news_raw_articles
+
+models:
+  - name: stg_interactions
+    columns:
+      - name: interaction_id
+        tests: [not_null, unique]
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['click', 'like', 'bookmark', 'search']
+      - name: article_id
+        tests: [not_null]
+      - name: user_id
+        tests: [not_null]
+      - name: event_ts
+        tests: [not_null]
+
+  - name: stg_articles
+    columns:
+      - name: article_id
+        tests: [not_null, unique]
+      - name: category
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['tech', 'business', 'sports', 'health', 'science', 'politics', 'general']
+      - name: published_at
+        tests: [not_null]

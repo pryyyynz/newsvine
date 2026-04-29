@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: fct_article_features
+    columns:
+      - name: article_id
+        tests: [not_null, unique]
+      - name: category
+        tests: [not_null]
+      - name: recency_score
+        tests: [not_null]
+
+  - name: fct_user_profiles
+    columns:
+      - name: user_category_key
+        tests: [not_null, unique]
+      - name: user_id
+        tests: [not_null]
+      - name: category
+        tests: [not_null]
+      - name: normalized_topic_weight
+        tests: [not_null]
