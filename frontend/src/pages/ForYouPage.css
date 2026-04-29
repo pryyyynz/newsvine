@@ -1,0 +1,21 @@
+.for-you {
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+.for-you__header {
+  margin-bottom: 24px;
+}
+
+.for-you__title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: var(--nv-font-serif);
+  margin: 0;
+}
+
+.for-you__subtitle {
+  color: var(--nv-grey-500);
+  font-size: 0.9rem;
+  margin: 4px 0 0;
+}

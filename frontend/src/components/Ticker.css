@@ -1,0 +1,136 @@
+.ticker {
+  background: var(--nv-black);
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  height: 48px;
+  border-bottom: 1px solid var(--nv-grey-900);
+}
+
+.ticker__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  background: var(--nv-red);
+  color: var(--nv-white);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+.ticker__live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--nv-white);
+  animation: ticker-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ticker-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.ticker__track {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+}
+
+.ticker__scroll {
+  display: flex;
+  gap: 0;
+  animation: ticker-slide 45s linear infinite;
+  width: max-content;
+}
+
+.ticker__scroll:hover {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  white-space: nowrap;
+  color: var(--nv-grey-300);
+  font-size: 0.78rem;
+  border-right: 1px solid var(--nv-grey-900);
+  height: 48px;
+  text-decoration: none;
+}
+
+.ticker__item:hover {
+  background: var(--nv-grey-900);
+}
+
+.ticker__coin-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ticker__coin-name {
+  color: var(--nv-white);
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.ticker__coin-symbol {
+  color: var(--nv-grey-500);
+  font-weight: 600;
+  font-size: 0.65rem;
+}
+
+.ticker__spark {
+  flex-shrink: 0;
+}
+
+.ticker__price {
+  color: var(--nv-grey-300);
+  font-weight: 600;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker__change {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+
+.ticker__change--up {
+  color: #0ecb81;
+  background: rgba(14, 203, 129, 0.1);
+}
+
+.ticker__change--down {
+  color: #f6465d;
+  background: rgba(246, 70, 93, 0.1);
+}
+
+@media (max-width: 768px) {
+  .ticker__label {
+    padding: 0 10px;
+    font-size: 0.65rem;
+  }
+  .ticker__coin-name,
+  .ticker__coin-symbol {
+    display: none;
+  }
+}

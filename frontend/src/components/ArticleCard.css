@@ -1,0 +1,358 @@
+/* ── Hero Card ─────────────────────────── */
+.hero-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--nv-grey-200);
+  margin-bottom: 24px;
+}
+
+.hero-card:hover {
+  text-decoration: none;
+}
+
+.hero-card:hover .hero-card__title {
+  text-decoration: underline;
+}
+
+.hero-card__img {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  background: var(--nv-grey-100);
+}
+
+.hero-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.hero-card:hover .hero-card__img img {
+  transform: scale(1.03);
+}
+
+.hero-card__body {
+  padding: 16px 0;
+}
+
+.hero-card__title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 8px 0;
+  font-family: var(--nv-font-serif);
+}
+
+.hero-card__snippet {
+  color: var(--nv-grey-700);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.hero-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero-card__source {
+  color: var(--nv-grey-500);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ── Article Card ──────────────────────── */
+.article-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.article-card:hover {
+  text-decoration: none;
+}
+
+.article-card:hover .article-card__title {
+  text-decoration: underline;
+}
+
+.article-card__img {
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  overflow: hidden;
+  background: var(--nv-grey-100);
+  border-radius: 2px;
+}
+
+.article-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.article-card__body {
+  padding: 10px 0;
+}
+
+.article-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 6px 0;
+  font-family: var(--nv-font-serif);
+}
+
+.article-card__snippet {
+  font-size: 0.85rem;
+  color: var(--nv-grey-700);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.article-card__rank {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--nv-red);
+  color: var(--nv-white);
+  font-weight: 800;
+  font-size: 0.75rem;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+/* ── Compact Card ──────────────────────── */
+.compact-card {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--nv-grey-200);
+  text-decoration: none;
+  color: inherit;
+  align-items: flex-start;
+}
+
+.compact-card:hover .compact-card__title {
+  text-decoration: underline;
+}
+
+.compact-card:hover {
+  text-decoration: none;
+}
+
+.compact-card__index {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--nv-red);
+  line-height: 1;
+  min-width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.compact-card__body {
+  flex: 1;
+}
+
+.compact-card__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+/* ── Grid layout ───────────────────────── */
+.article-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+/* ── Featured Grid (BBC style: 1 large + stacked small) ── */
+.featured-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--nv-grey-200);
+  margin-bottom: 24px;
+}
+
+.featured-grid__main {
+  min-width: 0;
+}
+
+.featured-grid__side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ── Wide Card (horizontal) ────────────── */
+.wide-card {
+  display: flex;
+  gap: 16px;
+  text-decoration: none;
+  color: inherit;
+  align-items: flex-start;
+}
+
+.wide-card:hover {
+  text-decoration: none;
+}
+
+.wide-card:hover .wide-card__title {
+  text-decoration: underline;
+}
+
+.wide-card__img {
+  width: 180px;
+  flex-shrink: 0;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--nv-grey-100);
+  border-radius: 2px;
+}
+
+.wide-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wide-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.wide-card__title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 4px 0 6px;
+  font-family: var(--nv-font-serif);
+}
+
+.wide-card__snippet {
+  font-size: 0.82rem;
+  color: var(--nv-grey-700);
+  line-height: 1.4;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Small Card (square thumbnail) ─────── */
+.small-card {
+  display: flex;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--nv-grey-200);
+}
+
+.small-card:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.small-card:hover {
+  text-decoration: none;
+}
+
+.small-card:hover .small-card__title {
+  text-decoration: underline;
+}
+
+.small-card__img {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--nv-grey-100);
+  border-radius: 2px;
+}
+
+.small-card__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.small-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.small-card__title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2px 0 4px;
+  font-family: var(--nv-font-serif);
+}
+
+/* ── Three-column grid ─────────────────── */
+.article-grid--three {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .featured-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .article-grid--three {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .wide-card__img {
+    width: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-card__title {
+    font-size: 1.3rem;
+  }
+
+  .article-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .article-grid--three {
+    grid-template-columns: 1fr;
+  }
+
+  .wide-card {
+    flex-direction: column;
+  }
+
+  .wide-card__img {
+    width: 100%;
+  }
+
+  .small-card__img {
+    width: 60px;
+    height: 60px;
+  }
+}

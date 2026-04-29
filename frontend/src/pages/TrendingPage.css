@@ -1,0 +1,43 @@
+.listing-page {
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+.listing-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--nv-grey-200);
+  border-radius: 4px;
+  background: var(--nv-white);
+  color: var(--nv-grey-700);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 16px;
+}
+
+.listing-page__back:hover {
+  background: var(--nv-grey-50, #f5f5f5);
+  border-color: var(--nv-grey-300, #ccc);
+  color: var(--nv-dark);
+}
+
+.listing-page__header {
+  margin-bottom: 24px;
+}
+
+.listing-page__title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: var(--nv-font-serif);
+  margin: 0;
+}
+
+.listing-page__subtitle {
+  color: var(--nv-grey-500);
+  font-size: 0.9rem;
+  margin: 4px 0 0;
+}

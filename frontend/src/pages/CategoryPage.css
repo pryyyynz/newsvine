@@ -1,0 +1,49 @@
+.category-page {
+  padding-top: 8px;
+  padding-bottom: 48px;
+}
+
+.category-page__count {
+  color: var(--nv-grey-500);
+  font-size: 0.82rem;
+  font-weight: 400;
+  margin-left: 12px;
+}
+
+.category-page__featured {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  margin-bottom: 32px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--nv-grey-200);
+}
+
+.category-page__hero {
+  min-width: 0;
+}
+
+.category-page__sidebar {
+  min-width: 0;
+}
+
+.category-page__sidebar .section-header {
+  margin-top: 0;
+  margin-bottom: 4px;
+}
+
+.category-page__more {
+  margin-bottom: 24px;
+}
+
+.section-header--sm h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--nv-grey-700);
+}
+
+@media (max-width: 900px) {
+  .category-page__featured {
+    grid-template-columns: 1fr;
+  }
+}

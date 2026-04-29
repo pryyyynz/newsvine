@@ -1,0 +1,117 @@
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 48px 16px;
+  min-height: 60vh;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--nv-grey-200);
+  border-radius: 4px;
+  padding: 32px;
+  background: var(--nv-white);
+}
+
+.auth-card__header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.auth-card__logo {
+  display: inline-block;
+  background: var(--nv-red);
+  color: var(--nv-white);
+  font-weight: 800;
+  font-size: 1.4rem;
+  padding: 4px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.auth-card__header h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.auth-card__header p {
+  font-size: 0.85rem;
+  color: var(--nv-grey-500);
+}
+
+.auth-card__error {
+  background: #fff5f5;
+  border: 1px solid #f5c6cb;
+  color: var(--nv-red);
+  padding: 8px 12px;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.auth-form__field {
+  margin-bottom: 16px;
+}
+
+.auth-form__field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--nv-grey-700);
+}
+
+.auth-form__field input,
+.auth-form__field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--nv-grey-300);
+  border-radius: 3px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s;
+  background: var(--nv-white);
+}
+
+.auth-form__field input:focus,
+.auth-form__field select:focus {
+  border-color: var(--nv-red);
+}
+
+.auth-form__submit {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 3px;
+  background: var(--nv-red);
+  color: var(--nv-white);
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.auth-form__submit:hover:not(:disabled) {
+  background: var(--nv-red-light);
+}
+
+.auth-form__submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-card__footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: var(--nv-grey-500);
+}
+
+.auth-card__footer a {
+  color: var(--nv-blue);
+  font-weight: 600;
+}
