@@ -2,7 +2,7 @@
 name = "newsvine-api"
 version = "0.1.0"
 description = "Local-first API for the Newsvine personal project"
-readme = "LOCAL_SETUP.md"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",
