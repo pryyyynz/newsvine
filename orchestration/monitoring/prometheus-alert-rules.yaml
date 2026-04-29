@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: newsvine-phase6-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: newsvine-api-alerts
+      rules:
+        - alert: NewsvineHighErrorRate
+          expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Newsvine API error rate is above 1%"
+            description: "5xx error ratio exceeded 1% for 5 minutes"
+
+        - alert: NewsvineHighP99Latency
+          expr: histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Newsvine API p99 latency is above 1 second"
+            description: "p99 latency exceeded 1 second for 5 minutes"
+
+    - name: newsvine-kafka-alerts
+      rules:
+        - alert: NewsvineKafkaConsumerLagHigh
+          expr: max(kafka_consumergroup_lag) > 10000
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kafka consumer lag is above 10,000"
+            description: "At least one consumer group lag exceeded 10,000 for 10 minutes"

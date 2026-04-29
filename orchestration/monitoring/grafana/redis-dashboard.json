@@ -1,0 +1,37 @@
+{
+  "title": "Newsvine Redis",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "title": "Redis Memory Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "redis_memory_used_bytes",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Redis Hit Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Redis Key Count",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "redis_db_keys",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

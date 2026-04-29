@@ -1,0 +1,27 @@
+{
+  "title": "Newsvine Kafka",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "title": "Consumer Lag by Group",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "max(kafka_consumergroup_lag) by (consumergroup, topic)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Messages In Per Topic",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(kafka_server_brokertopicmetrics_messagesin_total[1m])) by (topic)",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

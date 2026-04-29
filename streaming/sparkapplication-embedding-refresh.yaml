@@ -1,0 +1,25 @@
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: newsvine-embedding-refresh-batch
+  namespace: streaming
+spec:
+  type: Python
+  mode: cluster
+  image: apache/spark:3.5.1
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///opt/spark/work-dir/streaming/spark_embedding_refresh_batch.py
+  sparkVersion: 3.5.1
+  restartPolicy:
+    type: Never
+  driver:
+    cores: 1
+    memory: 4g
+    serviceAccount: spark
+  executor:
+    instances: 2
+    cores: 2
+    memory: 6g
+  sparkConf:
+    spark.kubernetes.container.image: apache/spark:3.5.1
+  arguments: []

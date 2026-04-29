@@ -1,0 +1,25 @@
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: newsvine-als-training-batch
+  namespace: streaming
+spec:
+  type: Python
+  mode: cluster
+  image: apache/spark:3.5.1
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///opt/spark/work-dir/streaming/spark_als_training_batch.py
+  sparkVersion: 3.5.1
+  restartPolicy:
+    type: Never
+  driver:
+    cores: 1
+    memory: 2g
+    serviceAccount: spark
+  executor:
+    instances: 2
+    cores: 2
+    memory: 4g
+  sparkConf:
+    spark.kubernetes.container.image: apache/spark:3.5.1
+  arguments: []

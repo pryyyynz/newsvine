@@ -1,0 +1,22 @@
+grafana:
+  enabled: true
+  adminPassword: change-me
+  defaultDashboardsEnabled: true
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 7d
+    serviceMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true
+
+prometheusOperator:
+  enabled: true

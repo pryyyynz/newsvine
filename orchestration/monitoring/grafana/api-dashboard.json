@@ -1,0 +1,45 @@
+{
+  "title": "Newsvine API",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m])) by (path)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Latency p50/p95/p99",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate per Endpoint",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (path)",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}
