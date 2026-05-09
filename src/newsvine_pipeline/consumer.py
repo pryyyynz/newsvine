@@ -16,6 +16,7 @@ from newsvine_api.config import get_settings
 from newsvine_api.db import Base, init_db
 from newsvine_api import models as _models  # noqa: F401
 from newsvine_pipeline.recommendation_embeddings import TfidfEmbeddingIndexer, get_embedding_indexer
+from newsvine_pipeline.nvidia_kimi import summarize_article_for_display
 
 LOGGER = logging.getLogger("newsvine.consumer")
 REQUIRED_KEYS = {"id", "title", "content", "category", "timestamp", "source", "country", "url"}
@@ -139,6 +140,12 @@ def _get_embedding_indexer() -> TfidfEmbeddingIndexer:
     return get_embedding_indexer()
 
 
+def _build_content_snippet(*, content: str, llm_summary: str) -> str:
+    if llm_summary.strip():
+        return llm_summary.strip()[:500]
+    return content[:500]
+
+
 def process_article_record(article: dict[str, Any], *, elasticsearch_url: str) -> None:
     clean = _validate_and_trim(article)
 
@@ -146,17 +153,22 @@ def process_article_record(article: dict[str, Any], *, elasticsearch_url: str) -
         clean["title"], clean["content"], clean["category"],
     )
 
+    ai = summarize_article_for_display(clean["title"], clean["content"])
+    snippet = _build_content_snippet(content=clean["content"], llm_summary=ai.get("ai_summary", ""))
+
     document = {
         "id": clean["id"],
         "title": clean["title"],
         "content": clean["content"],
-        "content_snippet": clean["content"][:500],
+        "content_snippet": snippet,
         "category": enriched_category,
         "timestamp": clean["timestamp"],
         "source": clean["source"],
         "country": clean["country"],
         "url": clean["url"],
         "image_url": clean.get("image_url", ""),
+        "ai_summary": ai.get("ai_summary", ""),
+        "key_points": ai.get("key_points", ""),
     }
 
     response = requests.put(
@@ -190,7 +202,7 @@ def process_article_record(article: dict[str, Any], *, elasticsearch_url: str) -
                 "category": enriched_category,
                 "url": clean["url"],
                 "published_at": _to_datetime(clean["timestamp"]),
-                "payload": json.dumps(clean),
+                "payload": json.dumps(document),
                 "ingested_at": datetime.utcnow(),
             },
         )
@@ -200,7 +212,7 @@ def process_article_record(article: dict[str, Any], *, elasticsearch_url: str) -
             article_id=clean["id"],
             title=clean["title"],
             content=clean["content"],
-            category=clean["category"],
+            category=enriched_category,
             country=clean["country"],
             timestamp=clean["timestamp"],
         )

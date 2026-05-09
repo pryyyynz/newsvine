@@ -9,6 +9,8 @@
       "title": { "type": "text" },
       "content": { "type": "text" },
       "content_snippet": { "type": "text" },
+      "ai_summary": { "type": "text" },
+      "key_points": { "type": "text" },
       "category": { "type": "keyword" },
       "timestamp": { "type": "date" },
       "source": { "type": "keyword" },

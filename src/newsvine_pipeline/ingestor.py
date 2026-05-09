@@ -15,45 +15,260 @@ import redis
 import requests
 
 from newsvine_api.config import get_settings
+from newsvine_pipeline.article_extraction import fetch_article_plain_text
 
 LOGGER = logging.getLogger("newsvine.ingestor")
 REQUIRED_FIELDS = ("id", "title", "content", "category", "timestamp", "source", "country", "url")
 
+# Open-graph / Twitter card assets are often low-res or heavily cropped; they upscale poorly in
+# fixed aspect-ratio UI. Prefer feed-native thumbnails and inline RSS images instead.
+_SOCIAL_IMAGE_HOST_FRAGMENTS = (
+    "twimg.com",
+    "pbs.twimg.com",
+    "twitter.com",
+    "t.co/",
+    "facebook.com",
+    "fbcdn.net",
+    "fbcdn.com",
+    "platform-lookaside.fbsbx.com",
+    "instagram.com",
+    "cdninstagram.com",
+    "social-plugins.facebook.com",
+)
 
-def _extract_image_url(item: dict[str, Any]) -> str:
-    """Extract the best image URL from an RSS entry or API article."""
-    # feedparser: media_thumbnail
+
+def _is_social_card_image_url(url: str) -> bool:
+    u = (url or "").strip().lower()
+    if not u.startswith("http"):
+        return True
+    return any(fragment in u for fragment in _SOCIAL_IMAGE_HOST_FRAGMENTS)
+
+
+def _first_img_src_from_html(fragment: str) -> str:
+    if not fragment or "<img" not in fragment.lower():
+        return ""
+    match = re.search(r'<img[^>]+src\s*=\s*["\']([^"\']+)["\']', fragment, re.IGNORECASE)
+    if not match:
+        match = re.search(r"<img[^>]+src\s*=\s*([^\s>]+)", fragment, re.IGNORECASE)
+    if not match:
+        return ""
+    return html.unescape(match.group(1).strip())
+
+
+def _max_width_hint_from_url(url: str) -> int:
+    """Best-effort width hint for picking the least blurry asset among feed alternatives."""
+    low = url.lower()
+    # Guardian: path segments like /1679/ are crop metadata, not output width — use ?width= only.
+    if "guim.co.uk" in low:
+        best = 0
+        for m in re.finditer(r"[?&](?:w|width)=(\d{2,4})\b", url, re.IGNORECASE):
+            n = int(m.group(1))
+            if 100 <= n <= 3840:
+                best = max(best, n)
+        return best
+    best = 0
+    for m in re.finditer(r"/(\d{3,4})/", url):
+        n = int(m.group(1))
+        if 200 <= n <= 3840:
+            best = max(best, n)
+    for m in re.finditer(r"[?&](?:w|width)=(\d{2,4})\b", url, re.IGNORECASE):
+        n = int(m.group(1))
+        if 50 <= n <= 3840:
+            best = max(best, n)
+    return best
+
+
+def _bump_bbci_ichef_resolution(url: str) -> str:
+    """Request a sharper iChef variant when the feed only lists small widths (e.g. /standard/240/)."""
+    if "ichef.bbci.co.uk" not in url.lower():
+        return url
+
+    def _mz(m: re.Match) -> str:
+        prefix, w, slash = m.group(1), m.group(2), m.group(3)
+        try:
+            wi = int(w)
+        except ValueError:
+            return m.group(0)
+        if 200 <= wi < 800:
+            return f"{prefix}976{slash}"
+        return m.group(0)
+
+    out = url
+    out = re.sub(
+        r"(ichef\.bbci\.co\.uk/[^/]+/(?:standard|branded)/)(\d{2,4})(/)",
+        _mz,
+        out,
+        flags=re.I,
+    )
+    out = re.sub(
+        r"(ichef\.bbci\.co\.uk/(?:news|ace|sport)/)(\d{2,4})(/)",
+        _mz,
+        out,
+        flags=re.I,
+    )
+    out = re.sub(
+        r"(ichef\.bbci\.co\.uk/live-experience/cps/)(\d{2,4})(/)",
+        _mz,
+        out,
+        flags=re.I,
+    )
+    return out
+
+
+def _bump_guardian_image_width(url: str) -> str:
+    """Guardian feeds often stop at width=700; bump sub-1200 requests for sharper cards on retina."""
+    if "guim.co.uk" not in url.lower():
+        return url
+    m = re.search(r"([?&])width=(\d{2,4})\b", url, re.IGNORECASE)
+    if not m:
+        return url
+    w = int(m.group(2))
+    if w >= 1200:
+        return url
+    new_w = min(2000, 1200)
+    return re.sub(
+        r"([?&])width=\d{2,4}\b",
+        lambda m: f"{m.group(1)}width={new_w}",
+        url,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+
+
+def _media_entry_is_probably_image(m: dict[str, Any]) -> bool:
+    t = (m.get("type") or "").lower()
+    med = (m.get("medium") or "").lower()
+    if "image" in t or med == "image":
+        return True
+    u = (m.get("url") or "").strip().lower()
+    if not u.startswith("http"):
+        return False
+    if "guim.co.uk" in u and "/master/" in u:
+        return True
+    base = u.split("?", 1)[0]
+    return base.endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))
+
+
+def _extract_og_image_from_html(markup: str) -> str:
+    """Match common og:image meta layouts (including data-* attrs between property and content)."""
+    patterns = (
+        r'(?:property|name)=["\'](?:og:image(?::secure_url|:url)?|twitter:image(?::src)?|image)["\'][^>]*\scontent=["\']([^"\']+)["\']',
+        r'content=["\']([^"\']+)["\'][^>]*(?:property|name)=["\'](?:og:image(?::secure_url|:url)?|twitter:image(?::src)?|image)["\']',
+        r'<link\s+rel=["\']image_src["\'][^>]*\shref=["\']([^"\']+)["\']',
+        r'<link\s+href=["\']([^"\']+)["\'][^>]*\srel=["\']image_src["\']',
+    )
+    for pat in patterns:
+        match = re.search(pat, markup, re.IGNORECASE)
+        if match:
+            return html.unescape(match.group(1).strip())
+    return ""
+
+
+def _fetch_aljazeera_feature_image(page_url: str) -> str:
+    """Al Jazeera RSS has no media; load og:image from the article HTML (same-origin assets only)."""
+    if "aljazeera.com" not in page_url.lower():
+        return ""
+    try:
+        resp = requests.get(
+            page_url,
+            timeout=15,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; NewsvineBot/1.0)"},
+        )
+        resp.raise_for_status()
+    except Exception:
+        return ""
+    snippet = resp.text[:150_000]
+    img = _extract_og_image_from_html(snippet)
+    if not img or not img.lower().startswith("http"):
+        return ""
+    low = img.lower()
+    if "aljazeera.com" not in low:
+        return ""
+    if _is_social_card_image_url(img):
+        return ""
+    return img
+
+
+def _pick_sharper_feed_image(thumbnail_url: str, inline_url: str) -> str:
+    """When both are feed-native, prefer the URL that hints at higher resolution; tie → inline."""
+    wt = _max_width_hint_from_url(thumbnail_url)
+    wi = _max_width_hint_from_url(inline_url)
+    if wi > wt:
+        return inline_url
+    if wt > wi:
+        return thumbnail_url
+    return inline_url or thumbnail_url
+
+
+def _extract_feed_native_image_url(item: dict[str, Any]) -> str:
+    """Pick a feed-native image URL (no social cards)."""
+    thumb_url = ""
     thumbnails = item.get("media_thumbnail") or []
     if thumbnails and isinstance(thumbnails, list):
-        url = thumbnails[0].get("url", "")
-        if url:
-            return url
-    # feedparser: media_content
+        u = thumbnails[0].get("url", "")
+        if u and not _is_social_card_image_url(u):
+            thumb_url = u
+
+    html_desc = item.get("rss_description_html") or ""
+    inline = _first_img_src_from_html(html_desc)
+    if inline and _is_social_card_image_url(inline):
+        inline = ""
+
+    if thumb_url and inline:
+        return _pick_sharper_feed_image(thumb_url, inline)
+    if thumb_url:
+        return thumb_url
+    if inline:
+        return inline
+    # feedparser: media_content (Guardian omits type=image; treat gu:im master URLs as images)
     media = item.get("media_content") or []
     if media and isinstance(media, list):
+        typed: list[str] = []
         for m in media:
-            if "image" in (m.get("type") or m.get("medium") or ""):
-                url = m.get("url", "")
-                if url:
-                    return url
+            if not isinstance(m, dict):
+                continue
+            if not _media_entry_is_probably_image(m):
+                continue
             url = m.get("url", "")
-            if url:
-                return url
+            if url and not _is_social_card_image_url(url):
+                typed.append(url)
+        if typed:
+            return max(typed, key=_max_width_hint_from_url)
     # feedparser: enclosures / links
     links = item.get("links") or []
     for link in links:
         if "image" in (link.get("type") or ""):
-            return link.get("href", "")
+            href = link.get("href", "")
+            if href and not _is_social_card_image_url(href):
+                return href
     enclosures = item.get("enclosures") or []
     for enc in enclosures:
         if "image" in (enc.get("type") or ""):
-            return enc.get("url") or enc.get("href", "")
+            raw = enc.get("url") or enc.get("href") or ""
+            if raw and not _is_social_card_image_url(raw):
+                return raw
     # NewsAPI: urlToImage
     url_to_image = item.get("urlToImage") or ""
-    if url_to_image:
+    if url_to_image and not _is_social_card_image_url(url_to_image):
         return url_to_image
     # image field directly
-    return item.get("image_url") or item.get("image") or ""
+    direct = item.get("image_url") or item.get("image") or ""
+    if direct and not _is_social_card_image_url(str(direct)):
+        return str(direct)
+    return ""
+
+
+def _extract_image_url(item: dict[str, Any]) -> str:
+    """Extract image URL from an RSS entry or API article (feed-native, not social cards)."""
+    chosen = _extract_feed_native_image_url(item)
+    if not chosen:
+        src = str(item.get("_ingest_source_name") or "")
+        page = str(item.get("url") or item.get("link") or "").strip()
+        if src == "aljazeera_all_rss" and page:
+            chosen = _fetch_aljazeera_feature_image(page)
+    if not chosen:
+        return ""
+    return _bump_guardian_image_width(_bump_bbci_ichef_resolution(chosen))
 
 
 def _get_int(name: str, default: int) -> int:
@@ -276,27 +491,8 @@ def _build_sources() -> list[dict[str, str]]:
 
 
 def _fetch_full_text(url: str) -> str:
-    """Fetch the full article page and extract paragraph text."""
-    try:
-        resp = requests.get(
-            url,
-            timeout=15,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; NewsvineBot/1.0)"},
-        )
-        resp.raise_for_status()
-        html = resp.text
-        # Remove script/style/nav/footer blocks
-        html = re.sub(r"<(script|style|nav|footer|header|aside)[^>]*>.*?</\1>", "", html, flags=re.DOTALL | re.IGNORECASE)
-        # Extract text from <p> tags
-        paragraphs = re.findall(r"<p[^>]*>(.*?)</p>", html, flags=re.DOTALL | re.IGNORECASE)
-        texts = [_strip_html(p).strip() for p in paragraphs]
-        # Keep paragraphs that look like real sentences (>40 chars)
-        texts = [t for t in texts if len(t) > 40]
-        full = "\n".join(texts)
-        return full if len(full) > 200 else ""
-    except Exception as exc:
-        LOGGER.debug("Full-text fetch failed for %s: %s", url, exc)
-        return ""
+    """Fetch the article page and extract main text (Trafilatura + legacy fallback)."""
+    return fetch_article_plain_text(url)
 
 
 def _fetch_rss(source: dict[str, str]) -> list[dict[str, Any]]:
@@ -317,6 +513,9 @@ def _fetch_rss(source: dict[str, str]) -> list[dict[str, Any]]:
             "title": entry.get("title"),
             "content": full_text or summary,
             "published": entry.get("published") or entry.get("updated"),
+            # Original RSS HTML for inline lead images (kept even when content is plain full_text)
+            "rss_description_html": summary,
+            "_ingest_source_name": source["name"],
         }
         # Pass through image-related fields from feedparser
         if hasattr(entry, "media_thumbnail"):
@@ -351,7 +550,12 @@ def _fetch_newsapi(source: dict[str, str]) -> list[dict[str, Any]]:
     data = response.json()
     if data.get("status") != "ok":
         raise ValueError(f"NewsAPI error: {data}")
-    return data.get("articles", [])
+    articles = data.get("articles", [])
+    name = source["name"]
+    for article in articles:
+        if isinstance(article, dict):
+            article["_ingest_source_name"] = name
+    return articles
 
 
 def _ensure_bloom(client: redis.Redis, key: str) -> bool:

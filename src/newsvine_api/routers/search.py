@@ -41,7 +41,7 @@ def _search_query(*, q: str, country: str | None, limit: int, offset: int) -> di
                             {
                                 "multi_match": {
                                     "query": q,
-                                    "fields": ["title^2", "content", "content_snippet"],
+                                    "fields": ["title^2", "content", "content_snippet", "ai_summary"],
                                     "type": "best_fields",
                                     "operator": "and",
                                 }

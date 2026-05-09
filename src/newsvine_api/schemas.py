@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 
 class RegisterRequest(BaseModel):
@@ -42,6 +42,27 @@ class NewsArticle(BaseModel):
     country: str
     url: str
     image_url: str | None = None
+    ai_summary: str | None = None
+    key_points: str | None = None
+
+    @field_validator("ai_summary", mode="before")
+    @classmethod
+    def normalize_ai_summary(cls, value: Any) -> str | None:
+        if value is None or isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            return " ".join(str(item).strip() for item in value if str(item).strip()) or None
+        return str(value).strip() or None
+
+    @field_validator("key_points", mode="before")
+    @classmethod
+    def normalize_key_points(cls, value: Any) -> str | None:
+        if value is None or isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            points = [str(item).strip() for item in value if str(item).strip()]
+            return "\n".join(f"- {point}" for point in points) or None
+        return str(value).strip() or None
 
 
 class NewsListResponse(BaseModel):

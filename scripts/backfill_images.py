@@ -1,4 +1,8 @@
-"""Backfill image_url for existing articles by extracting og:image from their URLs."""
+"""Backfill image_url for articles that have none, using og:image from the article page.
+
+Does not use twitter:image (often small card art that looks blurry when scaled in the UI).
+Skips known social CDN URLs so we do not store Twitter/Facebook preview assets.
+"""
 import json
 import re
 import sys
@@ -6,6 +10,24 @@ import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ES = "http://localhost:9200"
+
+_SOCIAL = (
+    "twimg.com",
+    "pbs.twimg.com",
+    "twitter.com",
+    "t.co/",
+    "facebook.com",
+    "fbcdn.net",
+    "fbcdn.com",
+    "platform-lookaside.fbsbx.com",
+    "instagram.com",
+    "cdninstagram.com",
+)
+
+
+def _is_social_cdn(u: str) -> bool:
+    low = (u or "").lower()
+    return any(s in low for s in _SOCIAL)
 
 
 def _extract_og_image(url: str) -> str:
@@ -18,35 +40,19 @@ def _extract_og_image(url: str) -> str:
             allow_redirects=True,
         )
         resp.raise_for_status()
-        html = resp.text[:50_000]  # only scan first 50KB
-        # Try og:image first
-        match = re.search(
+        html = resp.text[:150_000]
+        patterns = (
+            r'property=["\']og:image["\'][^>]*\scontent=["\']([^"\']+)["\']',
+            r'content=["\']([^"\']+)["\'][^>]*property=["\']og:image["\']',
             r'<meta\s+(?:property|name)=["\']og:image["\']\s+content=["\']([^"\']+)["\']',
-            html,
-            re.IGNORECASE,
+            r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\']og:image["\']',
         )
-        if not match:
-            match = re.search(
-                r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\']og:image["\']',
-                html,
-                re.IGNORECASE,
-            )
-        if match:
-            return match.group(1).strip()
-        # Fallback: twitter:image
-        match = re.search(
-            r'<meta\s+(?:property|name)=["\']twitter:image["\']\s+content=["\']([^"\']+)["\']',
-            html,
-            re.IGNORECASE,
-        )
-        if not match:
-            match = re.search(
-                r'<meta\s+content=["\']([^"\']+)["\']\s+(?:property|name)=["\']twitter:image["\']',
-                html,
-                re.IGNORECASE,
-            )
-        if match:
-            return match.group(1).strip()
+        for pat in patterns:
+            match = re.search(pat, html, re.IGNORECASE)
+            if match:
+                candidate = match.group(1).strip()
+                if candidate and not _is_social_cdn(candidate):
+                    return candidate
         return ""
     except Exception:
         return ""
