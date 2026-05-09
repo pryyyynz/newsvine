@@ -119,6 +119,7 @@ services:
       dockerfile: Dockerfile
     image: newsvine-api:local
     container_name: newsvine-news-ingestor
+    restart: unless-stopped
     depends_on:
       - kafka
       - redis
@@ -144,6 +145,7 @@ services:
       dockerfile: Dockerfile
     image: newsvine-api:local
     container_name: newsvine-news-consumer
+    restart: unless-stopped
     depends_on:
       - kafka
       - postgres
@@ -162,6 +164,11 @@ services:
       APP_NEWS_TOPIC: news-articles
       APP_NEWS_DLQ_TOPIC: news-articles-dlq
       CONSUMER_GROUP_ID: news-article-consumer
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_LLM_ENABLE: ${NVIDIA_LLM_ENABLE:-1}
+      NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NVIDIA_MODEL: ${NVIDIA_MODEL:-moonshotai/kimi-k2.6}
+      NVIDIA_HTTP_TIMEOUT: ${NVIDIA_HTTP_TIMEOUT:-120}
 
   trending-scorer:
     build:
@@ -169,6 +176,7 @@ services:
       dockerfile: Dockerfile
     image: newsvine-api:local
     container_name: newsvine-trending-scorer
+    restart: unless-stopped
     depends_on:
       - kafka
       - redis
@@ -193,6 +201,7 @@ services:
       dockerfile: Dockerfile
     image: newsvine-api:local
     container_name: newsvine-profile-updater
+    restart: unless-stopped
     depends_on:
       - kafka
       - redis
@@ -213,6 +222,7 @@ services:
       dockerfile: Dockerfile
     image: newsvine-api:local
     container_name: newsvine-interactions-consumer
+    restart: unless-stopped
     depends_on:
       - kafka
       - postgres
