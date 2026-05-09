@@ -2,8 +2,38 @@ import { Link } from 'react-router-dom';
 import { formatTime, truncate, categoryColor, formatSource, decodeEntities } from '../utils';
 import './ArticleCard.css';
 
-function articleImg(article, w, h) {
-  return article.image_url || `https://picsum.photos/seed/${article.id}/${w}/${h}`;
+function escapeSvgText(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export function articlePlaceholderImage(article, w, h) {
+  const category = escapeSvgText((article?.category || 'News').toUpperCase());
+  const title = escapeSvgText(decodeEntities(article?.title || 'Newsvine').slice(0, 54));
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+      <rect width="100%" height="100%" fill="#f1f3f4"/>
+      <rect x="0" y="0" width="100%" height="8" fill="${categoryColor(article?.category || 'general')}"/>
+      <text x="24" y="${Math.round(h * 0.48)}" fill="#bb1919" font-family="Arial, sans-serif" font-size="${Math.max(18, Math.round(w / 12))}" font-weight="800">NV</text>
+      <text x="24" y="${Math.round(h * 0.66)}" fill="#333333" font-family="Arial, sans-serif" font-size="${Math.max(12, Math.round(w / 26))}" font-weight="700">${category}</text>
+      <text x="24" y="${Math.round(h * 0.8)}" fill="#666666" font-family="Arial, sans-serif" font-size="${Math.max(10, Math.round(w / 34))}">${title}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+export function articleImg(article, w, h) {
+  return article?.image_url?.trim() || articlePlaceholderImage(article, w, h);
+}
+
+function imageFallbackHandler(article, w, h) {
+  return (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = articlePlaceholderImage(article, w, h);
+  };
 }
 
 export function HeroCard({ article, showTag = true }) {
@@ -14,6 +44,7 @@ export function HeroCard({ article, showTag = true }) {
           src={articleImg(article, 960, 480)}
           alt=""
           loading="eager"
+          onError={imageFallbackHandler(article, 960, 480)}
         />
       </div>
       <div className="hero-card__body">
@@ -41,6 +72,7 @@ export function ArticleCard({ article, rank, showTag = true, timePrefix }) {
           src={articleImg(article, 400, 240)}
           alt=""
           loading="lazy"
+          onError={imageFallbackHandler(article, 400, 240)}
         />
       </div>
       <div className="article-card__body">
@@ -78,6 +110,7 @@ export function WideCard({ article, showTag = true, timePrefix }) {
           src={articleImg(article, 480, 320)}
           alt=""
           loading="lazy"
+          onError={imageFallbackHandler(article, 480, 320)}
         />
       </div>
       <div className="wide-card__body">
@@ -102,6 +135,7 @@ export function SmallCard({ article, showTag = true }) {
           src={articleImg(article, 200, 200)}
           alt=""
           loading="lazy"
+          onError={imageFallbackHandler(article, 200, 200)}
         />
       </div>
       <div className="small-card__body">

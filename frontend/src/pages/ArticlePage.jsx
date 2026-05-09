@@ -3,8 +3,36 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getArticle, postEvent, getArticleInteractions, addLike, removeLike, addBookmark, removeBookmark, search, getNews } from '../api';
 import { useAuth } from '../AuthContext';
 import { formatTime, categoryColor, formatSource, decodeEntities } from '../utils';
-import { WideCard } from '../components/ArticleCard';
+import { WideCard, articleImg, articlePlaceholderImage } from '../components/ArticleCard';
 import './ArticlePage.css';
+
+function articleParagraphs(content) {
+  const normalized = (content || '').trim();
+  if (!normalized) return [];
+
+  const explicit = normalized.split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
+  if (explicit.length > 1) return explicit;
+
+  const sentences = normalized
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9"'])/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+  if (sentences.length <= 3) return explicit;
+
+  const paragraphs = [];
+  let current = '';
+  for (const sentence of sentences) {
+    const next = current ? `${current} ${sentence}` : sentence;
+    if (current && next.length > 520) {
+      paragraphs.push(current);
+      current = sentence;
+    } else {
+      current = next;
+    }
+  }
+  if (current) paragraphs.push(current);
+  return paragraphs;
+}
 
 export default function ArticlePage() {
   const { id } = useParams();
@@ -119,6 +147,7 @@ export default function ArticlePage() {
 
   if (error) return <div className="error-msg">{error}</div>;
   if (!article) return <div className="spinner" />;
+  const paragraphs = articleParagraphs(article.content);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -166,14 +195,35 @@ export default function ArticlePage() {
 
       <div className="article-page__hero">
         <img
-          src={article.image_url || `https://picsum.photos/seed/${article.id}/1200/600`}
+          src={articleImg(article, 1200, 600)}
           alt=""
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = articlePlaceholderImage(article, 1200, 600);
+          }}
         />
       </div>
 
+      {(article.ai_summary || article.key_points) && (
+        <section className="article-page__ai" aria-label="Article summary">
+          {article.ai_summary && (
+            <div className="article-page__ai-block">
+              <h2 className="article-page__ai-heading">Summary</h2>
+              <p className="article-page__ai-summary">{decodeEntities(article.ai_summary)}</p>
+            </div>
+          )}
+          {article.key_points && (
+            <div className="article-page__ai-block">
+              <h2 className="article-page__ai-heading">Key points</h2>
+              <div className="article-page__key-points">{article.key_points}</div>
+            </div>
+          )}
+        </section>
+      )}
+
       <div className="article-page__grid">
         <div className="article-page__content">
-          {(article.content || '').split('\n').filter(Boolean).map((p, i) => (
+          {paragraphs.map((p, i) => (
             <p key={i}>{decodeEntities(p)}</p>
           ))}
 
